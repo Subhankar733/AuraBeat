@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
                     currentSong = currentSong,
                     isPlaying = isPlaying,
                     currentPosition = currentPosition,
-                    duration = duration.toLong(),
+                    duration = duration,
                     onSongClick = { song -> musicPlayer.playSong(song) },
                     onPlayPauseClick = { musicPlayer.togglePlayPause() },
                     onNextClick = { musicPlayer.playNext() },
