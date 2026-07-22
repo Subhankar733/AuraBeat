@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
                 MusicScreen(
                     songs = songs,
-                    currentSong = currentSong.toLong(),
+                    currentSong = currentSong,
                     isPlaying = isPlaying,
                     currentPosition = currentPosition.toLong(),
                     duration = duration.toFloat(),
