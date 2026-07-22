@@ -20,11 +20,11 @@ class LocalMusicPlayer(private val context: Context) {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying
 
-    private val _currentPosition = MutableStateFlow(0)
-    val currentPosition: StateFlow<Int> = _currentPosition
+    private val _currentPosition = MutableStateFlow(0L)
+    val currentPosition: StateFlow<Long> = _currentPosition
 
-    private val _duration = MutableStateFlow(0)
-    val duration: StateFlow<Int> = _duration
+    private val _duration = MutableStateFlow(0L)
+    val duration: StateFlow<Long> = _duration
 
     fun loadAudioFiles() {
         val songs = mutableListOf<Song>()
@@ -65,7 +65,8 @@ class LocalMusicPlayer(private val context: Context) {
         }
         _currentPlaying.value = song
         _isPlaying.value = true
-        _duration.value = mediaPlayer?.duration ?: 0
+        _duration.value = (mediaPlayer?.duration ?: 0).toLong()
+        _currentPosition.value = 0L
     }
 
     fun togglePlayPause() {
@@ -77,15 +78,20 @@ class LocalMusicPlayer(private val context: Context) {
                 it.start()
                 _isPlaying.value = true
             }
+        } ?: run {
+            val list = _audioList.value
+            if (list.isNotEmpty()) {
+                playSong(list[0])
+            }
         }
     }
 
     fun playNext() {
         val list = _audioList.value
         val current = _currentPlaying.value
-        if (list.isNotEmpty() && current != null) {
-            val currentIndex = list.indexOf(current)
-            val nextIndex = (currentIndex + 1) % list.size
+        if (list.isNotEmpty()) {
+            val currentIndex = if (current != null) list.indexOf(current) else -1
+            val nextIndex = if (currentIndex < list.size - 1) currentIndex + 1 else 0
             playSong(list[nextIndex])
         }
     }
@@ -93,15 +99,16 @@ class LocalMusicPlayer(private val context: Context) {
     fun playPrevious() {
         val list = _audioList.value
         val current = _currentPlaying.value
-        if (list.isNotEmpty() && current != null) {
-            val currentIndex = list.indexOf(current)
-            val prevIndex = if (currentIndex - 1 < 0) list.size - 1 else currentIndex - 1
+        if (list.isNotEmpty()) {
+            val currentIndex = if (current != null) list.indexOf(current) else 0
+            val prevIndex = if (currentIndex > 0) currentIndex - 1 else list.size - 1
             playSong(list[prevIndex])
         }
     }
 
-    fun seekTo(position: Int) {
-        mediaPlayer?.seekTo(position)
+    fun seekTo(position: Long) {
+        mediaPlayer?.seekTo(position.toInt())
+        _currentPosition.value = position
     }
 
     fun release() {
