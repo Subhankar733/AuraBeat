@@ -30,4 +30,4 @@ git push
 # ৫. লাইভ বিল্ড ট্র্যাকিং চালু করা
 echo "🔄 Monitoring Live Build..."
 sleep 3
-gh run view --watch
+gh run watch
