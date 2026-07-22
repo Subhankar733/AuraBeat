@@ -54,12 +54,12 @@ class MainActivity : ComponentActivity() {
                     currentSong = currentSong,
                     isPlaying = isPlaying,
                     currentPosition = currentPosition,
-                    duration = duration,
+                    duration = duration.toFloat(),
                     onSongClick = { song -> musicPlayer.playSong(song) },
                     onPlayPauseClick = { musicPlayer.togglePlayPause() },
                     onNextClick = { musicPlayer.playNext() },
                     onPreviousClick = { musicPlayer.playPrevious() },
-                    onSeek = { progress -> musicPlayer.seekTo(progress) }
+                    onSeek = { progress -> musicPlayer.seekTo(progress.toLong()) }
                 )
             }
         }
