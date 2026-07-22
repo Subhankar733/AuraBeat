@@ -1,5 +1,6 @@
 package com.subho.aurabeat.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,168 +34,175 @@ fun MusicScreen(
     onPreviousClick: () -> Unit,
     onSeek: (Float) -> Unit
 ) {
-    var showPlayerScreen by remember { mutableStateOf(false) }
+    var isPlayerExpanded by remember { mutableStateOf(false) }
 
-    // যদি কোনো গান সিলেক্ট করা থাকে এবং ইউজার প্লেয়ার স্ক্রিন দেখতে চায়
-    if (showPlayerScreen && currentSong != null) {
-        PlayerDetailScreen(
-            currentSong = currentSong,
-            isPlaying = isPlaying,
-            currentPosition = currentPosition,
-            duration = duration,
-            onBackClick = { showPlayerScreen = false },
-            onPlayPauseClick = onPlayPauseClick,
-            onNextClick = onNextClick,
-            onPreviousClick = onPreviousClick,
-            onSeek = onSeek
-        )
-    } else {
-        // মেইন গানের লিস্ট স্ক্রিন
-        SongListScreen(
-            songs = songs,
-            currentSong = currentSong,
-            isPlaying = isPlaying,
-            onSongClick = { song ->
-                onSongClick(song)
-                showPlayerScreen = true
-            },
-            onPlayPauseClick = onPlayPauseClick,
-            onBarClick = { if (currentSong != null) showPlayerScreen = true }
-        )
-    }
-}
-
-@Composable
-fun SongListScreen(
-    songs: List<Song>,
-    currentSong: Song?,
-    isPlaying: Boolean,
-    onSongClick: (Song) -> Unit,
-    onPlayPauseClick: () -> Unit,
-    onBarClick: () -> Unit
-) {
-    Scaffold(
-        containerColor = Color(0xFF1E1B24),
-        bottomBar = {
-            if (currentSong != null) {
-                // মিনি প্লেয়ার বার যা স্ক্রিনের নিচে সবসময় থাকবে
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onBarClick() },
-                    color = Color(0xFF2B2930),
-                    tonalElevation = 8.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(45.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF6750A4)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.White)
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(text = currentSong.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                Text(text = currentSong.artist, color = Color(0xFFCAC4D0), fontSize = 12.sp, maxLines = 1)
-                            }
-                        }
-                        IconButton(onClick = onPlayPauseClick) {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = "Play/Pause",
-                                tint = Color(0xFFD0BCFF)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    ) { paddingValues ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF121212)) // Spotify Dark Background
+    ) {
+        // ১. মূল গানের লিস্ট স্ক্রিন (Spotify Home View)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
             Text(
-                text = "AuraBeat Music",
-                color = Color(0xFFD0BCFF),
-                fontSize = 22.sp,
+                text = "Good day, AuraBeat",
+                color = Color.White,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = if (currentSong != null) 70.dp else 0.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(songs) { song ->
                     val isSelected = song == currentSong
-                    Card(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSongClick(song) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) Color(0xFF49454F) else Color(0xFF2B2930)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) Color(0xFF282828) else Color.Transparent)
+                            .clickable {
+                                onSongClick(song)
+                                isPlayerExpanded = true
+                            }
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
+                        Box(
                             modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF282828)),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Audiotrack,
+                                imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
-                                tint = if (isSelected) Color(0xFFD0BCFF) else Color(0xFFCAC4D0),
+                                tint = if (isSelected) Color(0xFF1DB954) else Color.Gray,
                                 modifier = Modifier.size(24.dp)
                             )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = song.title,
-                                    color = if (isSelected) Color(0xFFD0BCFF) else Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1
-                                )
-                                Text(
-                                    text = song.artist,
-                                    color = Color(0xFFCAC4D0),
-                                    fontSize = 13.sp,
-                                    maxLines = 1
-                                )
-                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = song.title,
+                                color = if (isSelected) Color(0xFF1DB954) else Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = song.artist,
+                                color = Color(0xFFB3B3B3),
+                                fontSize = 13.sp,
+                                maxLines = 1
+                            )
                         }
                     }
                 }
+            }
+        }
+
+        // ২. স্পটিফাই স্টাইল মিনি-প্লেয়ার বার (নিচে ভাসমান থাকবে)
+        if (currentSong != null && !isPlayerExpanded) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { isPlayerExpanded = true },
+                color = Color(0xFF282828),
+                tonalElevation = 4.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF1DB954)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.Black)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = currentSong.title,
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = currentSong.artist,
+                                color = Color(0xFFB3B3B3),
+                                fontSize = 12.sp,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                    IconButton(onClick = onPlayPauseClick) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = "Play/Pause",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+        }
+
+        // ৩. স্পটিফাই স্টাইল ফুল-স্ক্রিন নাও প্লেয়িং ভিউ (উপরে স্লাইড হয়ে আসবে)
+        AnimatedVisibility(
+            visible = isPlayerExpanded && currentSong != null,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (currentSong != null) {
+                SpotifyPlayerDetail(
+                    currentSong = currentSong,
+                    isPlaying = isPlaying,
+                    currentPosition = currentPosition,
+                    duration = duration,
+                    onCollapse = { isPlayerExpanded = false },
+                    onPlayPauseClick = onPlayPauseClick,
+                    onNextClick = onNextClick,
+                    onPreviousClick = onPreviousClick,
+                    onSeek = onSeek
+                )
             }
         }
     }
 }
 
 @Composable
-fun PlayerDetailScreen(
+fun SpotifyPlayerDetail(
     currentSong: Song,
     isPlaying: Boolean,
     currentPosition: Long,
     duration: Long,
-    onBackClick: () -> Unit,
+    onCollapse: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
@@ -211,7 +219,7 @@ fun PlayerDetailScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF1E1B24)
+        color = Color(0xFF121212)
     ) {
         Column(
             modifier = Modifier
@@ -220,7 +228,7 @@ fun PlayerDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Top Bar with Back Button
+            // টপ বার (নিচে নামানোর বাটন)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -228,53 +236,62 @@ fun PlayerDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                IconButton(onClick = onCollapse) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Collapse", tint = Color.White, modifier = Modifier.size(32.dp))
                 }
                 Text(
-                    text = "Now Playing",
-                    color = Color(0xFFD0BCFF),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
+                    text = currentSong.title,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-                Spacer(modifier = Modifier.size(48.dp))
+                Spacer(modifier = Modifier.size(32.dp))
             }
 
-            // Album Art
+            // বড় অ্যালবাম আর্ট (স্পটিফাই স্টাইল)
             Box(
                 modifier = Modifier
-                    .size(280.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF6750A4)),
+                    .size(300.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF282828)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = "Album Art",
-                    tint = Color.White,
-                    modifier = Modifier.size(100.dp)
+                    tint = Color(0xFF1DB954),
+                    modifier = Modifier.size(120.dp)
                 )
             }
 
-            // Song Info
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = currentSong.title,
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = currentSong.artist,
-                    color = Color(0xFFCAC4D0),
-                    fontSize = 14.sp,
-                    maxLines = 1
-                )
+            // গানের নাম ও আর্টিস্ট
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = currentSong.title,
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = currentSong.artist,
+                        color = Color(0xFFB3B3B3),
+                        fontSize = 16.sp,
+                        maxLines = 1
+                    )
+                }
             }
 
-            // Progress Slider and Time
+            // স্লাইডার এবং টাইম
             Column(modifier = Modifier.fillMaxWidth()) {
                 val maxLimit = if (duration > 0f) duration.toFloat() else 1f
 
@@ -290,9 +307,9 @@ fun PlayerDetailScreen(
                     },
                     valueRange = 0f..maxLimit,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color(0xFFD0BCFF),
-                        activeTrackColor = Color(0xFFD0BCFF),
-                        inactiveTrackColor = Color(0xFF49454F)
+                        thumbColor = Color.White,
+                        activeTrackColor = Color(0xFF1DB954),
+                        inactiveTrackColor = Color(0xFF535353)
                     )
                 )
 
@@ -300,12 +317,12 @@ fun PlayerDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = formatTime(sliderPosition.toLong()), color = Color(0xFFCAC4D0), fontSize = 12.sp)
-                    Text(text = formatTime(duration), color = Color(0xFFCAC4D0), fontSize = 12.sp)
+                    Text(text = formatTime(sliderPosition.toLong()), color = Color(0xFFB3B3B3), fontSize = 12.sp)
+                    Text(text = formatTime(duration), color = Color(0xFFB3B3B3), fontSize = 12.sp)
                 }
             }
 
-            // Controls
+            // প্লেয়ার কন্ট্রোলস (স্পটিফাই গ্রিন প্লে বাটন)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -319,14 +336,14 @@ fun PlayerDetailScreen(
 
                 FloatingActionButton(
                     onClick = onPlayPauseClick,
-                    containerColor = Color(0xFFD0BCFF),
-                    contentColor = Color(0xFF381E72),
+                    containerColor = Color(0xFF1DB954), // Spotify Green
+                    contentColor = Color.Black,
                     modifier = Modifier.size(72.dp)
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = "Play/Pause",
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 
