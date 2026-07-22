@@ -51,9 +51,9 @@ class MainActivity : ComponentActivity() {
 
                 MusicScreen(
                     songs = songs,
-                    currentSong = currentSong,
+                    currentSong = currentSong.toLong(),
                     isPlaying = isPlaying,
-                    currentPosition = currentPosition,
+                    currentPosition = currentPosition.toLong(),
                     duration = duration.toFloat(),
                     onSongClick = { song -> musicPlayer.playSong(song) },
                     onPlayPauseClick = { musicPlayer.togglePlayPause() },
