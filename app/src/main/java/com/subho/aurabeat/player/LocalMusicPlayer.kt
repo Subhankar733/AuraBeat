@@ -47,25 +47,26 @@ class LocalMusicPlayer(private val context: Context) {
         val uri: Uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
-            MediaStore.Audio.Media._TITLE,
-            MediaStore.Audio.Media._ARTIST,
-            MediaStore.Audio.Media._DATA,
-            MediaStore.Audio.Media._DURATION
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.DURATION
         )
 
-        val cursor: Cursor? = context.contentResolver.query(uri, projection, null, null, MediaStore.Audio.Media.TITLE + " ASC")
+        val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
+        val cursor: Cursor? = context.contentResolver.query(uri, projection, null, null, sortOrder)
         cursor?.use {
             val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-            val titleCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._TITLE)
-            val artistCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ARTIST)
-            val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._DATA)
-            val durationCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._DURATION)
+            val titleCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val artistCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+            val durationCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
                 val title = it.getString(titleCol) ?: "Unknown"
                 val artist = it.getString(artistCol) ?: "Unknown"
-                val path = it.getString(dataCol)
+                val path = it.getString(dataCol) ?: ""
                 val dur = it.getLong(durationCol)
                 songs.add(Song(id, title, artist, path, dur))
             }
