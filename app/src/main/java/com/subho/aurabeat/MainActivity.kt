@@ -10,9 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.subho.aurabeat.model.AudioItem
 import com.subho.aurabeat.ui.MusicScreen
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
@@ -20,6 +22,8 @@ class MainActivity : ComponentActivity() {
     private val audioListState = mutableStateListOf<AudioItem>()
     private var currentPlayingSong by mutableStateOf<AudioItem?>(null)
     private var isPlayingState by mutableStateOf(false)
+    private var currentPositionState by mutableLongStateOf(0L)
+    private var durationState by mutableLongStateOf(0L)
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -33,24 +37,51 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         player = ExoPlayer.Builder(this).build()
 
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                isPlayingState = isPlaying
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) {
+                    durationState = player.duration.coerceAtLeast(0L)
+                } else if (playbackState == Player.STATE_ENDED) {
+                    playNextSong()
+                }
+            }
+        })
+
         requestStoragePermission()
 
         setContent {
+            // Periodic Position update for Seekbar
+            LaunchedEffect(isPlayingState) {
+                while (isPlayingState) {
+                    currentPositionState = player.currentPosition.coerceAtLeast(0L)
+                    delay(500)
+                }
+            }
+
             MusicScreen(
                 audioList = audioListState,
                 currentPlaying = currentPlayingSong,
                 isPlaying = isPlayingState,
-                onSongSelect = { audio ->
-                    playAudio(audio)
-                },
+                currentPosition = currentPositionState,
+                duration = durationState,
+                onSongSelect = { audio -> playAudio(audio) },
                 onPlayPauseToggle = {
                     if (player.isPlaying) {
                         player.pause()
-                        isPlayingState = false
                     } else {
                         player.play()
-                        isPlayingState = true
                     }
+                },
+                onNext = { playNextSong() },
+                onPrevious = { playPreviousSong() },
+                onSeekTo = { fraction ->
+                    val targetMs = (fraction * durationState).toLong()
+                    player.seekTo(targetMs)
+                    currentPositionState = targetMs
                 }
             )
         }
@@ -71,21 +102,24 @@ class MainActivity : ComponentActivity() {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.ARTIST
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM_ID
         )
 
         contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val title = cursor.getString(titleColumn) ?: "Unknown"
                 val artist = cursor.getString(artistColumn) ?: "Unknown Artist"
+                val albumId = cursor.getLong(albumIdColumn)
                 val contentUri = ContentUris.withAppendedId(uri, id)
 
-                list.add(AudioItem(id, title, artist, contentUri))
+                list.add(AudioItem(id, title, artist, contentUri, albumId))
             }
         }
         audioListState.clear()
@@ -98,7 +132,20 @@ class MainActivity : ComponentActivity() {
         player.setMediaItem(mediaItem)
         player.prepare()
         player.play()
-        isPlayingState = true
+    }
+
+    private fun playNextSong() {
+        if (audioListState.isEmpty()) return
+        val currentIndex = audioListState.indexOf(currentPlayingSong)
+        val nextIndex = if (currentIndex != -1 && currentIndex + 1 < audioListState.size) currentIndex + 1 else 0
+        playAudio(audioListState[nextIndex])
+    }
+
+    private fun playPreviousSong() {
+        if (audioListState.isEmpty()) return
+        val currentIndex = audioListState.indexOf(currentPlayingSong)
+        val prevIndex = if (currentIndex > 0) currentIndex - 1 else audioListState.size - 1
+        playAudio(audioListState[prevIndex])
     }
 
     override fun onDestroy() {

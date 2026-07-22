@@ -6,5 +6,6 @@ data class AudioItem(
     val id: Long,
     val title: String,
     val artist: String,
-    val uri: Uri
+    val uri: Uri,
+    val albumId: Long = 0
 )
